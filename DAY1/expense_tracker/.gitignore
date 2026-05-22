@@ -1,0 +1,3 @@
+venv/            # ignore virtual environment files
+__pycache__/     # ignore cache files
+*.pyc            # ignore compiled python files
