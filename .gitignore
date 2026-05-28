@@ -1,2 +1,8 @@
+<<<<<<< HEAD
 __pycache__/
 *.pyc
+=======
+venv/
+__pycache__/
+chroma_db_folder/
+>>>>>>> fafca8af5a4b44e4300f329bcc40e00481c64a38
