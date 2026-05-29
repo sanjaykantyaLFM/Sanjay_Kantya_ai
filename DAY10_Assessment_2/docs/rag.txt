@@ -1,0 +1,1 @@
+Retrieval-Augmented Generation retrieves relevant documents before generating answers.

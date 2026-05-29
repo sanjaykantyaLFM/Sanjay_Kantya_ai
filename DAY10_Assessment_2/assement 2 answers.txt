@@ -1,0 +1,350 @@
+ans1: RAG is helps to retrival of relevant information of query and provide context to llm because ai model and llm do not have every information so because of it llm predict the wrong answer .
+RAG solve the two llm problem is that Hallucination and outdated old knowledge which means the llm do not know the current knowledge because it was not trained for the current knowledge so the llm did not able to give current affairs and other problem is Hallucination which means the llm do not have external (like our company policy ) the llm do not have information about it so whenever we ask anything it give any answer or predict answer which will be the wrong because llm do not have our company information so RAG solve this issue we can provide the pdf and information through rag then connect with llm then it give correct answer or do not predict wrong answer randomly and if it do not have answer then it simply say answer not found but it do not predict randomly and do not give wrong answer.
+
+ans2:
+Embedding: 
+the embedding is the way which convert the text into the numbers(vector) so that machine can understand the meaning of text. Means the embedding convert the text into numerical or vector representational
+
+Vector Similarity:
+vector similarity means how much closed similar of two embedding in meaning , and cosine similarity is most commonly used metric
+
+Chunk size: the chunk size is the amount of text that are included in the single document before it converted into the embedding. In simple that at one time how much text it extract from document that called chunk and total no. of chunk called that particular document chunk size
+
+chunk overlap: chunk overlap means that no. of character or token is shared among two consecutive chunk. chunk overlap means some part of first chunk and consecutively second chunk is merge or common in them which help to rag to start it context and do not miss anything in rag
+
+Top k retrival :
+ it means the returing the top mosk k relevant chunks from vector database based on similarity to query
+
+
+
+ans 3:
+using large chunk size of 2000 this store very much information in a single chunk so this make it less retrieval precise because many unrelated or different topics mixed up together because it necessary to take 2000 chunks so it also take other unrelated topic content and along with this it also take overlap 0 which can cause important context lost when information is split between two chunks. 
+it can reduce retrival accuracy bcz relevant information may be sprad across the multiple chunks 
+
+what i will do : instead of  large chunk size i would only take 500-500 chunk size and chunkoverlap = 100 to 150 only 
+which will give anser in only 1 to 2 paragraph long ans smaller chun keep info focused, while overlpaing preserve the last context btwn chunks and improe retrieval accuracy
+
+ans 4:
+
+import chromadb
+from sentence_transformers import SentenceTransformer
+
+#doc sample
+docs = [
+    "Python is a popular programming language.",
+    "Machine learning helps computers learn from data.",
+    "RAG combines retrieval and generation to answer questions."
+]
+
+# embedded loading
+#model = SentenceTransformer(model)
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+#generate embedding 
+embeddings = model.encode(docs).tolist()
+
+#chroma client
+client = chromadb.Client()
+#chroma collection 
+collection = client.create_collection(name="demo_collection")
+
+#Store documents and embeddings
+collection.add(
+    documents=docs,
+    embeddings=embeddings,
+    ids=["doc1", "doc2", "doc3"]
+)
+
+# Query
+query = "what is RAG?"
+query_embedding = model.encode(query).tolist()
+
+results = collection.query(
+    query_embeddings=[query_embedding],
+    n_results=2
+)
+
+#print output for two similar documnets
+print("Top 2 similar documents:")
+for doc in results["documents"][0]:
+    print(doc)
+
+
+ans 5:
+the failure mode in hallucination happens when llm generates information which is not present in the retrived document and also llm present it as fact
+
+So for reduce hallucination:
+1. improved retrival quality means used proper chunksize, chunk overlap and embedding so that more accurate relevant document can be retrived
+2. use "correct proper PROMPT" like give ans. from provided context only if you do not found answer then say answer not found
+3. increase retrival document (top-k) : must verify the retrived chunk actually contains required info. before generating the response
+
+
+ans 6:
+LCEL is a langchain language which is help to build ai workflows by connecting different components together. 
+This (|) is the pipe operator used to send the output of one component as a input for the next component and pipe operator (|) is preferred over manually calling multiple .invoke() function
+and LCEL is preferred over manully connecting components using multiple .invoke() calls because lcel make the code simple and more readable and easier to maintain 
+
+
+
+
+ans 7:
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+#Prompt template
+prompt = ChatPromptTemplate.from_template(
+    "Write a one-sentence tagline for: {topic}"
+)
+
+#Model 
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash"
+)
+
+#output parser
+parser = StrOutputParser()
+
+#lcel chain
+chain = prompt | llm | parser
+
+#invoke chian
+result = chain.invoke({"topic": "electric scooters"})
+print(result)
+
+
+
+
+ans 8:
+from pydantic import BaseModel, Field
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# pydantic model
+class MovieReview(BaseModel):
+    title: str = Field(description="Movie title")
+    rating: int = Field(description="Movie rating between 1 and 10")
+    one_line_review: str = Field(description="One line review")
+
+#parser
+parser = PydanticOutputParser(pydantic_object=MovieReview)
+
+
+prompt = PromptTemplate(
+    template="""
+    Review the movie and provide the output in the specified format.
+
+    {format_instructions}
+
+    Movie: {movie_name}
+    """,
+    input_variables=["movie_name"],
+    partial_variables={
+        "format_instructions": parser.get_format_instructions()
+    }
+)
+
+#model
+llm = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash"
+)
+
+chain = prompt | llm | parser
+
+#invoke func
+result = chain.invoke(
+    {"movie_name": "Interstellar"}
+)
+
+
+print(result)
+
+
+ans 9:
+
+a) loading pdf
+
+from langchain_community.document_loaders import PyPDFLoader
+class: PyPDFLoader
+
+b) for splitting into chunks
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+class: RecursiveCharacterTextSplitter
+
+c) Embedding chunks
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+class: GoogleGenerativeAIEmbeddings
+
+d) Storing in vector
+from langchain_community.vectorstores import Chroma
+class : Chroma
+
+e) retriving relevant chunks at query time
+retriever = vectorstore.as_retriever()
+class: VectorStoreRetriever
+
+(f) Combining retrieved context with the question into a prompt + model + parser
+
+prompt | llm | StrOutputParser()
+
+classes :
+ChatPromptTemplate
+ChatGoogleGenerativeAI
+StrOutputParser
+
+
+
+Sec C:
+
+ans 10:
+Chain:
+chain can execute steps in a fixed sequence where the output of one component become input for next one. it follow the straight path from start to end and it is best for simple workflow 
+
+Graph:
+in graph it allows multiple path , branching, loops, and decision making based on condition which make it more flexible and complex ai application . 
+for ex: graph can check whether the retrieved docs are relevant and if not loop back and perform the retrieval again for the specific times like if we do not mention how many try count then it will run for infnite loop so we mention  try count up to 3 so it stops after 3 times try . 
+where a chain cannot easily perform such condition routing and task;
+
+
+ans 11;
+
+state: 
+state shared the data object that store information and passed the data btw nodes during execution
+Node:
+nodes are individual function or task that process the state and give updated state
+
+edges:
+edges define the path and flow of work in particular direction means it connect the nodes and determines flow
+
+Condtitional Edges
+the conditional edges choose the next node based on condition and make decision using current state
+
+
+
+State -> Node A(retrive doc)  -> State {} -> Node B (generate ans) -> State{}
+
+
+
+ans 12:Minimal langGraph with Two nodes
+from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+# defining state
+class GraphState(TypedDict):
+    messages: list
+
+# node 1
+def greet(state: GraphState):
+    state["messages"].append("Hello!")
+    return state
+
+# node 2
+def farewell(state: GraphState):
+    state["messages"].append("Goodbye!")
+    return state
+
+# building here empty graph for the above structure
+builder = StateGraph(GraphState)
+
+# adding nodes
+builder.add_node("greet", greet)
+builder.add_node("farewell", farewell)
+
+# connect node with edges
+builder.add_edge(START, "greet")
+builder.add_edge("greet", "farewell")
+builder.add_edge("farewell", END)
+
+#imp compile the graph now
+graph = builder.compile()
+
+# invoke graph
+result = graph.invoke({"messages": []})
+
+print(result)
+
+
+ans 13:
+
+State shape : 
+state store the user query , conversational msg, tool results and final ans
+State = {
+    "messages": list,
+    "user_query": str,
+    "tool_result": str,
+    "final_answer": str
+}
+
+
+Nodes:
+Agent Node: analyze the user query and decides whether it can ans directly or need tool and update the state
+Tool node: Calls the search tool and stores the search result in the state
+
+end node: generate the final response and terminate the graph
+
+Condition edges : it works based on condition
+
+graph flows: Start -> agent -> check condtion -> agent -> end node -> end
+
+
+Loop terminates:
+after the tool node it return search results and the graph goes back to agend  node and the agent have req. info. and generate final ans. instead fo requesting another time then graph sent it to end node and reaches END . we set max iteration limit ex 3 so it will stop after 3 loop
+
+Sec D 
+
+and 14:
+
+MCP model context protocol is standard protocol that connect ai tool to connect with external tools, data source. It solves the problem of integration of different tools separately for each ai model by providing common communicatin standard. 
+
+Host:  host provide the interaction interface through which user can interact for ex: claude , and any ai application 
+Client : client manage the communication btwn the host and mcp server 
+Server: server provide access to external and it is responsible to execute tools
+Tools : they perform action like search or calculator are tools
+Resources: it means it provide data ( files, database, documents)
+Prompts: Reusable prompt template which we share with ai
+
+
+
+
+ans 15: mcp tools:
+mcp tool perform action when ai requested. ex: like a web search tool that searches the internet and gives the latest information
+
+mcp resources:  an mcp resources provides data and content which can be used by ai and read it but cannot not perform any action
+
+
+ans 16: 
+from mcp.server.fastmcp import FastMCP
+
+# server initialization
+mcp = FastMCP("Word Count Server")
+
+@mcp.tool()
+def word_count(text: str) -> int:
+    """
+    Count the number of words in the given text.
+    """
+    return len(text.split())
+
+# run server on stdio  bcz stdio is best for local machine
+if __name__ == "__main__":
+    mcp.run()
+
+
+ans 17:
+we use mcp instead of func because mcp provides a standard to connect tools and data  source. so we can work with diff. ai tools without rewriteing the integration code everytime 
+like if we create a normal function then for connect with ai we need to used socket programing which become difficult to write everytime and complex.
+so in mcp we use @mcp.tool() and then according to our context the ai model choose what tool is need to run this query. one imp point is that mcp only provides the multiple tools and among them which tool should be pickped is only decided by ai model not by mcp
+
+and mcp can expose tools and resouces and through single prompt . which make easier to manage and reuse external capability instead of building custom code for every new tool, file source.
+
+
+
+
+
